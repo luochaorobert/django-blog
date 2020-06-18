@@ -1,0 +1,10 @@
+<ul>
+{% for article in top %}
+  <li>【置顶】<a href="{% url 'article-detail' article.id %}">{{ article.title }}</a>
+    | {{ article.pub_time }}</li>
+{% endfor %}
+{% for article in articles %}
+  <li><a href="{% url 'article-detail' article.id %}">{{ article.title }}</a>
+    | {{ article.pub_time }}</li>
+{% endfor %}
+</ul>

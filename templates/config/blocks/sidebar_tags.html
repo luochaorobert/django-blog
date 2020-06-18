@@ -1,0 +1,6 @@
+<ul>
+{% for tag in tags %}
+  <li><a href="{% url 'article-list' %}?tag={{ tag.id }}">{{ tag.name }}</a>
+    {{ tag.article_count }}</li>
+{% endfor %}
+</ul>

@@ -44,6 +44,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # 第三方应用程序
+    'mdeditor',
+
+    # 我的应用程序
+    'apps.users.apps.UsersConfig',
+    'apps.blog.apps.BlogConfig',
+    'apps.comment.apps.CommentConfig',
+    'apps.config.apps.ConfigConfig',
 ]
 
 MIDDLEWARE = [
@@ -128,4 +137,9 @@ STATICFILES_DIRS = (
 )
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+
+# django-mdeditor设置
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+AUTH_USER_MODEL = "users.UserProfile"
