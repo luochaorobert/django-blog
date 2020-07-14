@@ -17,11 +17,30 @@ from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.static import serve
 from django.conf import settings
+from django.contrib.sitemaps import views as sitemap_views
+from django.views.generic import TemplateView
+
+from apps.blog.rss import LatestPostFeed
+from apps.blog.sitemap import ArticleSitemap
+
+from apps.blog.views import ArticleListView, ArticleDetailView, ArticleArchivesView
+from apps.users.views import ProfileView
+from apps.comment.views import AddCommentView
+
+handler404 = 'apps.blog.views.page_not_found_view'
+handler500 = 'apps.blog.views.server_error_view'
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('article/', ArticleListView.as_view(), name='article-list'),
-    # path('article/(?P<article_id>\d+)/', ArticleDetailView.as_view(), name='article-detail'),
+    path('', ArticleListView.as_view(), name='article-list'),
+    path('accounts/', include('allauth.urls')),
+    path('accounts/profile/<int:user_id>/', ProfileView.as_view(), name="profile"),
+    path('article/<int:article_id>/', ArticleDetailView.as_view(), name='article-detail'),
+    path('add_comment/<int:article_id>/', AddCommentView.as_view(), name='add-comment'),
+    path('archives/', ArticleArchivesView.as_view(), name='article-archives'),
+    path('rss/', LatestPostFeed(), name='rss'),
+    path('sitemap.xml', sitemap_views.sitemap, {'sitemaps': {'articles': ArticleSitemap}}, name='sitemap'),
     path('mdeditor/', include('mdeditor.urls')),
 
     # 配置上传文件的访问url

@@ -1,10 +1,11 @@
-<ul>
-{% for article in top %}
-  <li>【置顶】<a href="{% url 'article-detail' article.id %}">{{ article.title }}</a>
-    | {{ article.pub_time }}</li>
-{% endfor %}
 {% for article in articles %}
-  <li><a href="{% url 'article-detail' article.id %}">{{ article.title }}</a>
-    | {{ article.pub_time }}</li>
+  <p class="mb-1">
+    <a href="{% url 'article-detail' article.id %}" class="text-muted">
+      <u>{{ article.title }}</u>
+    </a>
+    {% if article.on_top %}
+      <span class="badge badge-info">置顶</span>
+    {% endif %}
+    &ensp;|&ensp;{{ article.pub_time|date:"Y/m/d" }}
+  </p>
 {% endfor %}
-</ul>

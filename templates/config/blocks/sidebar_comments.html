@@ -1,6 +1,7 @@
-<ul>
 {% for comment in comments %}
-  <li><a href="{% url 'article-detail' comment.article.id %}">
-    {{ comment.article.title }}</a> | {{ comment.auth.nickname }} : {{ comment.content }}</li>
+  <p class="mb-1">
+    {{ comment.author }} 发表在
+    <a href="{% url 'article-detail' comment.article.id %}" class="text-muted"><u>《{{ comment.article.title }}》</u></a>
+    &ensp;|&ensp;{{ comment.created_time|date:"Y/m/d" }}
+  </p>
 {% endfor %}
-</ul>

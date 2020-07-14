@@ -21,10 +21,61 @@ class Comment(models.Model):
     def __str__(self):
         return self.content
 
-    @classmethod
-    def latest_comments(cls):
-        return cls.objects.filter(is_deleted=False).order_by('-created_time')
+    def has_child(self):
+        if self.comment_set.all().count() > 0:
+            return True
+        else:
+            return False
 
     @classmethod
-    def get_by_target(cls, target):
-        return cls.objects.filter(target=target, status=cls.STATUS_NORMAL)
+    def latest_comments(cls, nums=None):
+        if nums:
+            return cls.objects.filter(is_deleted=False).order_by('-created_time')[:nums]
+        else:
+            return cls.objects.filter(is_deleted=False).order_by('-created_time')
+
+    @classmethod
+    def get_comment_tree(cls, article, comment=None):
+        """
+        将指定Article实例的某个Comment实例的子评论生成树形结构，
+        如果不指定Comment实例，则生成Article实例所有评论的树形结构
+        返回结构示例：
+        [
+            {
+                'current': obj,
+                'subordinate': [],
+            },
+            {
+                'current': obj,
+                'subordinate': [
+                    {
+                        'current': obj,
+                        'subordinate': [],
+                    },
+                    {
+                        'current': obj,
+                        'subordinate': [],
+                    },
+                ],
+            },
+            {
+                'current': obj,
+                'subordinate': [],
+            }
+        ]
+        :param article: Article实例
+        :param comment: Comment实例，可以不指定，默认为None
+        :return: list
+        """
+        tree = []
+        objects = cls.objects.filter(article=article, parent_comment=comment, is_deleted=False)
+        for obj in objects:
+            if obj.has_child:
+                subordinate = cls.get_comment_tree(article, obj)
+            else:
+                subordinate = []
+            tree.append({
+                'current': obj,
+                'subordinate': subordinate,
+            })
+        return tree

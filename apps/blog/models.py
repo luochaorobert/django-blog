@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.db import models
 from django.conf import settings
 from django.utils.functional import cached_property
+from django.template.defaultfilters import truncatechars_html
 
 import mistune
 from mdeditor.fields import MDTextField
@@ -24,15 +25,65 @@ class Category(models.Model):
         verbose_name = '分类'
         verbose_name_plural = verbose_name
         unique_together = (("name", "parent_category"),)
+        ordering = ['sort']
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        # 已删除的分类必然不放在主页导航
+        if self.is_deleted and self.is_nav:
+            self.is_nav = False
 
     def has_child(self):
         if self.category_set.all().count() > 0:
             return True
         else:
             return False
+
+    @classmethod
+    def get_category_tree(cls, obj=None):
+        """
+        将obj所有的子分类生成树形结构，如果不指定则生成Category里所有分类的树形结构
+        返回结构示例：
+        [
+            {
+                'current': obj,
+                'subordinate': [],
+            },
+            {
+                'current': obj,
+                'subordinate': [
+                    {
+                        'current': obj,
+                        'subordinate': [],
+                    },
+                    {
+                        'current': obj,
+                        'subordinate': [],
+                    },
+                ],
+            },
+            {
+                'current': obj,
+                'subordinate': [],
+            }
+        ]
+        :param obj: Category实例，可以不指定，默认为None
+        :return: list
+        """
+        tree = []
+        objects = cls.objects.filter(parent_category=obj, is_nav=True)
+        for obj in objects:
+            if obj.has_child:
+                subordinate = cls.get_category_tree(obj)
+            else:
+                subordinate = []
+            tree.append({
+                'current': obj,
+                'subordinate': subordinate,
+            })
+        return tree
 
 
 class Tag(models.Model):
@@ -51,7 +102,7 @@ class Tag(models.Model):
 
     @cached_property
     def article_count(self):
-        return Article.objects.filter(tags__name=self.name).distinct().count()
+        return Article.objects.filter(tag__name=self.name).distinct().count()
 
     article_count.short_description = "文章数量"
 
@@ -63,7 +114,7 @@ class Article(models.Model):
     content = MDTextField(verbose_name="正文")
     content_html = models.TextField(verbose_name="正文html代码", blank=True, editable=False)
     category = models.ForeignKey(Category, on_delete=models.DO_NOTHING, verbose_name="分类")
-    tag = models.ManyToManyField(Tag, verbose_name="标签", blank=True, null=True)
+    tag = models.ManyToManyField(Tag, verbose_name="标签", blank=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name="作者")
     on_top = models.BooleanField(default=False, verbose_name="是否置顶")
     comment_allowed = models.BooleanField(default=True, verbose_name="是否允许评论")
@@ -73,14 +124,14 @@ class Article(models.Model):
     mod_time = models.DateTimeField(auto_now=True, verbose_name="修改时间")
 
     users_like = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='articles_liked',
-                                        blank=True, null=True, verbose_name="点赞用户")
+                                        blank=True, verbose_name="点赞用户")
     pv = models.PositiveIntegerField(default=0)
     uv = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = "文章"
         verbose_name_plural = verbose_name
-        ordering = ['on_top', '-pub_time']
+        ordering = ['-on_top', '-pub_time']
 
     def __str__(self):
         return self.title
@@ -107,21 +158,39 @@ class Article(models.Model):
     def next_article(self):
         # 下一篇文章
         return Article.objects.filter(
-            id__gt=self.id, is_published=True).order_by('id').first()
+            pub_time__gt=self.pub_time).order_by('pub_time').first()
 
     def prev_article(self):
         # 前一篇文章
         return Article.objects.filter(
-            id__lt=self.id, is_published=True).order_by('id').last()
+            pub_time__lt=self.pub_time).order_by('pub_time').last()
 
     @classmethod
-    def top_articles(cls):
-        return cls.objects.filter(on_top=True).order_by('-pub_time')
+    def latest_articles(cls, nums=None):
+        if nums:
+            return cls.objects.filter(is_published=True)[:nums]
+        else:
+            return cls.objects.filter(is_published=True)
 
     @classmethod
-    def latest_articles(cls):
-        return cls.objects.filter(is_published=True, on_top=False).order_by('-pub_time')
+    def hottest_articles(cls, nums=None):
+        if nums:
+            return cls.objects.filter(is_published=True).order_by('-pv')[:nums]
+        else:
+            return cls.objects.filter(is_published=True).order_by('-pv')
 
-    @classmethod
-    def hottest_articles(cls):
-        return cls.objects.filter(is_published=True).order_by('-pv')
+    @cached_property
+    def comment_num(self):
+        return self.comment_set.filter(is_deleted=False).count()
+
+    comment_num.short_description = "评论数量"
+
+    @cached_property
+    def tags(self):
+        return ','.join(self.tag.values_list('name', flat=True))
+
+    @cached_property
+    def users_like_count(self):
+        return self.users_like.all().count()
+
+    users_like_count.short_description = "点赞数量"

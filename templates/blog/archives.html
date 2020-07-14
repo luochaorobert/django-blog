@@ -1,0 +1,63 @@
+{% extends "./base.html" %}
+{% load static %}
+
+{% block main %}
+
+  <div class="py-3">
+    <h3><strong>文章归档</strong></h3>
+{#    <p><strong>文章归档</strong></p>#}
+  </div>
+
+  {% if article_list %}
+    {% for article in article_list %}
+      <div class="row no-gutters">
+
+        {% if not article.pub_time.year == article.next_article.pub_time.year %}
+          <div class="col-2 archives pt-2">
+            <h3>{{ article.pub_time.year }}年</h3>
+          </div>
+        {% else %}
+          <div class="col-2 pt-2">
+          </div>
+        {% endif %}
+
+        {% if not article.pub_time|date:"Y-m" == article.next_article.pub_time|date:"Y-m" %}
+          <div class="col-1 archives pt-2">
+            <h4>{{ article.pub_time.month }}月</h4>
+          </div>
+        {% else %}
+          <div class="col-1 pt-2">
+          </div>
+        {% endif %}
+
+        <div class="col-1 archives py-2">
+          <h5>{{ article.pub_time.day }}日</h5>
+        </div>
+        <div class="col-8 archives py-2">
+          <h5>
+            <a class="text-dark" href="{% url 'article-detail' article.id %}">
+              {{ article.title }}
+            </a>
+          </h5>
+          <p class="my-0 text-secondary">
+            <small>
+              分类：
+              <a class="text-secondary" href="{% url 'article-list' %}?category={{ article.category.id }}">
+                <u>{{ article.category }}</u></a>
+              &emsp;&emsp;标签：
+              {% for tag in article.tag.all %}
+                <a class="text-secondary" href="{% url 'article-list' %}?tag={{ tag.id }}"><u>{{ tag }}</u></a>&ensp;
+              {% endfor %}
+            </small>
+          </p>
+        </div>
+
+      </div><!-- /.blog-post -->
+    {% endfor %}
+  {% else %}
+    <div class="p-3">
+      <p>没有文章</p>
+    </div>
+  {% endif %}
+
+{% endblock %}

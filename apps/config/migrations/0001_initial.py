@@ -25,6 +25,7 @@ class Migration(migrations.Migration):
                 ('theme', models.PositiveIntegerField(choices=[(1, '默认主题'), (2, '其他主题')], default=1, verbose_name='模板主题')),
                 ('record_number', models.CharField(blank=True, max_length=100, null=True, verbose_name='网站备案号')),
                 ('is_enable', models.BooleanField(default=False, verbose_name='是否启用')),
+                ('created_time', models.DateTimeField(auto_now_add=True, verbose_name='创建时间')),
             ],
             options={
                 'verbose_name': '网站配置',

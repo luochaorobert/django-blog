@@ -1,0 +1,35 @@
+{% load comment_block %}
+
+{% for comment in comment_tree %}
+
+  <div class="card comment-list" id="commentBlock{{ comment.current.id }}"
+       style="margin-left:{% widthratio iterations|add:-1 1 2 %}rem;">
+    <div class="d-flex">
+      <div class="pt-3 pl-3">
+        <img src="{{ comment.current.author.image.url }}" class="card-img rounded-circle head-image" alt="User Image">
+      </div>
+      <div class="card-body">
+        <h6 class="card-title">
+          <a href="{% url 'profile' comment.current.author.id %}" class="text-muted">
+            <u>{{ comment.current.author }}</u>
+          </a>&nbsp;
+          <span>{{ comment.current.created_time }}</span>
+        </h6>
+        <p class="card-text">
+          {% autoescape off %}
+            {{ comment.current.content }}
+          {% endautoescape %}
+        </p>
+        <a href="#commentForm"
+           onclick='reply_comment({{ comment.current.id }}, "{{ comment.current.author }}", "{{ comment.current.content }}");'>
+          <p class="card-text"><small class="text-muted">回复</small></p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if comment.subordinate %}
+    {% comment_block comment.subordinate iterations %}
+  {% endif %}
+
+{% endfor %}

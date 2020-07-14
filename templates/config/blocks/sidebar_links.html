@@ -1,5 +1,7 @@
-<ul>
+<div class="row no-gutters">
 {% for link in links %}
-  <li><a href="{{ link.href }}">{{ link.name }}</a></li>
+  <div class="mb-2 mr-2">
+    <a href="{{ link.href }}" class="mb-1 text-muted"><u>{{ link.name }}</u></a>
+  </div>&nbsp;
 {% endfor %}
-</ul>
+</div>

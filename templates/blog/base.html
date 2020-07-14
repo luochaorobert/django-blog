@@ -1,81 +1,181 @@
 {% load static %}
-{% load cache %}
-<!DOCTYPE HTML>
-<html lang="en">
+{% load blog_tags %}
+
+<!doctype html>
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
-    <title>{% block title %}首页{% endblock %}- typeidea博客系统</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+    <meta name="description" content="">
+    <title>{% block title %}{{ blog_setting.site_name }}{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'css/blog/blog.css' %}" rel="stylesheet">
 
     {% block extra_head %}
     {% endblock %}
-    <style>
-    .post {
-        margin-bottom: 5px;
-    }
-    </style>
+
   </head>
+
   <body>
-	<div class="container head">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-          <a class="navbar-brand" href="/">首页</a>
+    <div class="container">
+
+      <div class="card bg-light text-white" style="border:none;">
+        {% if blog_setting.background_image %}
+          <img class="card-img" src="{{ blog_setting.background_image }}" alt="Card image">
+        {% else %}
+          <img class="card-img" src="{% static 'img/background_image.jpg' %}" alt="Card image">
+        {% endif %}
+        <div class="card-img-overlay">
+          <h1 class="card-title p-4 font-weight-bold">{{ blog_setting.site_name }}</h1>
+          <h4 class="card-text pl-4 font-weight-light">{{ blog_setting.site_description }}</h4>
+        </div>
+      </div>
+
+      <div class="my-4 border-top border-bottom">
+        <nav class="navbar navbar-expand-lg navbar-light">
+          <a class="navbar-brand" href="{% url 'article-list' %}">首页</a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
             <ul class="navbar-nav mr-auto">
-            {% for cate in navs %}
-              <li class="nav-item">
-                  <a class="nav-link" href="{% url 'category-list' cate.id %}">{{ cate.name }}</a>
+              {% for category in category_tree %}
+                {% if category.subordinate %}
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="" id="navbarDropdown" role="button"
+                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      {{ category.current }}
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                      <a class="dropdown-item" href="{% url 'article-list' %}?category={{ category.current.id }}">
+                        {{ category.current }}</a>
+                      <div class="dropdown-divider"></div>
+                      {% for child_category in category.subordinate %}
+                        <a class="dropdown-item" href="{% url 'article-list' %}?category={{ child_category.current.id }}">
+                          {{ child_category.current }}</a>
+                      {% endfor %}
+                    </div>
+                  </li>
+                {% else %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'article-list' %}?category={{ category.current.id }}">
+                      {{ category.current }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              <li class="nav-item active">
+                <a class="nav-link" href="{% url 'article-archives' %}"><u>文章归档</u></a>
               </li>
-            {% endfor %}
             </ul>
-            <form class="form-inline" action='/search/' method='GET'>
-                <input class="form-control" type="search" name="keyword" placeholder="Search" aria-label="Search" value="{{ keyword }}">
-              <button class="btn btn-outline-success" type="submit">搜索</button>
+
+            <form class="form-inline my-2 my-lg-0" action="{% url 'article-list' %}" method="get">
+              <div class="input-group input-group-sm">
+                <input type="text" name="key" class="form-control" placeholder="输入关键词"
+                       aria-label="Recipient's username" aria-describedby="basic-addon2">
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="submit">&emsp;搜索&emsp;</button>
+                  <button class="btn btn-outline-secondary" type="button" data-toggle="collapse"
+                          data-target="#filterBox" aria-expanded="false"
+                          aria-controls="filterBox">高级筛选</button>
+                </div>
+              </div>
             </form>
+
           </div>
         </nav>
-        <div class="jumbotron">
-            <h1 class="display-4">Typeidea</h1>
-            <p class="lead">基于Django的多人博客系统</p>
+
+        <div class="collapse px-3 mb-4" id="filterBox">
+          <div class="card card-body">
+            <form action="{% url 'article-list' %}" method="get">
+              <div class="form-row">
+                {% for form in filter_form %}
+                  <div class="form-group col">
+                    <label for="{{ form.id_for_label }}" class="col-form-label col-form-label-sm">
+                      {{ form.label }}
+                    </label>
+                    {{ form }}
+                  </div>
+                {% endfor %}
+                <div class="form-group align-self-end">
+                  <button class="btn btn-sm btn-secondary" type="submit">&emsp;提交&emsp;</button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
-	</div>
-	<div class="container main">
+
+      </div>
+
+      <main role="main" class="container">
         <div class="row">
-            <div class="col-9 post-list">
+          <div class="col-md-8 blog-main">
+
             {% block main %}
             {% endblock %}
-            </div>
-            <div class="col-3">
-                {% block sidebar %}
-                    {% for sidebar in sidebars %}
-                    <div class="card sidebar">
-                        <div class="card-body">
-                            <h4 class="card-title">{{ sidebar.title }}</h4>
-                            <p>
-                            {{ sidebar.content_html }}
-                            </p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% endblock %}
-            </div>
-        </div>
+
+          </div><!-- /.blog-main -->
+
+          <aside class="col-md-4 blog-sidebar">
+
+            {% if request.user.is_authenticated %}
+              <div class="d-flex p-3">
+                <div class="pr-3">
+                  <a href="{% url 'profile' request.user.id %}">
+                    <img src="{{ request.user.image.url }}" class="card-img rounded-circle head-image" alt="User Image">
+                  </a>
+                </div>
+                <div>
+                  <p class="mb-1"><strong>{{ request.user }}</strong>，欢迎光临！</p>
+                  <a href="{% url 'account_logout' %}"><p class="text-muted">注销登录</p></a>
+                </div>
+              </div>
+            {% else %}
+              <div class="text-right pr-2">
+                <a href="{% url 'account_login' %}"><p class="text-muted"><u>用户登录</u></p></a>
+              </div>
+            {% endif %}
+
+            {% for sidebar in sidebars %}
+              <div class="border-top mb-3 p-3">
+                <p><strong>{{ sidebar.title }}</strong></p>
+                {{ sidebar.content_html|safe }}
+              </div>
+            {% endfor %}
+
+          </aside><!-- /.blog-sidebar -->
+
+        </div><!-- /.row -->
+
+      </main><!-- /.container -->
+
+      <footer class="blog-footer mt-5">
+        <p class="mb-1">Copyright&copy; {{ blog_setting.site_name }}</p>
+        <ul class="list-inline mb-1">
+          <li class="list-inline-item">Powered by <a href="https://www.djangoproject.com/" class="text-muted"><u>Django</u></a></li>|
+          <li class="list-inline-item"><a href="https://github.com/luochaorobert/django_blog" class="text-muted"><u>Github</u></a></li>|
+          <li class="list-inline-item"><a href="{% url 'sitemap' %}" class="text-muted"><u>SiteMap</u></a></li>|
+          <li class="list-inline-item"><a href="{% url 'rss' %}" class="text-muted"><u>RSS</u></a></li>
+        </ul>
+        <a href="http://www.beian.miit.gov.cn/">
+          <p class="text-muted"><u>{{ blog_setting.record_number }}</u></p>
+        </a>
+      </footer>
+
     </div>
 
-    <footer class="footer">
-        {% block footer %}
-        <div class="container">
-            <hr/>
-            <nav class="nav category">
-            {% for cate in categories %}
-            <a href="{% url 'category-list' cate.id %}" class="nav-link">{{ cate.name }}</a>
-            {% endfor %}
-            </nav>
-        </div>
-        <div class="container power">
-            <span class="text-muted">Power by Typeidea@the5fire</span>
-        </div>
-        {% endblock %}
-    </footer>
+    <!-- jQuery -->
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <!-- Bootstrap 4 -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+    {% block custom_js %}
+    {% endblock %}
+
   </body>
 </html>

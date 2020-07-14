@@ -6,8 +6,10 @@ from django.contrib.auth.models import AbstractUser
 
 
 def user_image_path(instance, filename):
+    content = instance.image.file.read()
     ext = filename.split('.')[-1]
-    filename = '{}.{}'.format(instance.name, ext)
+    # 将上传的图片文件命名为md5值
+    filename = '{}.{}'.format(hashlib.md5(content).hexdigest(), ext)
     return os.path.join("head_image", str(instance.id), filename)
 
 
@@ -24,10 +26,6 @@ class UserProfile(AbstractUser):
         ordering = ['-id']
 
     def __str__(self):
-        return self.email
-
-    def save(self, *args, **kwargs):
-        content = self.image.file.read()
-        # 将上传的图片文件命名为md5值
-        self.name = hashlib.md5(content).hexdigest()
-        super().save(*args, **kwargs)
+        if self.nickname is None:
+            return self.username
+        return self.nickname

@@ -1,29 +1,147 @@
 {% extends "./base.html" %}
+{% load static %}
+{% load blog_tags %}
 {% load comment_block %}
-{% block title %} {{ post.title }} {% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="http://cdn.bootcss.com/highlight.js/8.0/styles/monokai_sublime.min.css">
-<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad();</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
 {% endblock %}
 
 {% block main %}
-    {% if post %}
-    <h1>{{ post.title }}</h1>
-    <div>
-        <span>分类:<a href="{% url 'category-list' post.category_id %}">{{ post.category.name }}</a></span>
-        <span>作者:<a href="{% url 'author' post.owner_id %}">{{ post.owner.username }}</a></span>
-        <span>创建时间:{{ post.created_time }}</span>
-        <span>pv/uv:{{ post.pv }}/{{ post.uv }}</span>
+  {% if article %}
+    <h2>{{ article.title }}</h2>
+    <div class="my-3">
+      <span><a class="text-muted" href="{% url 'article-list' %}"><u>剑客营</u></a></span> >
+      {% if article.category.parent_category %}
+        <span><a class="text-muted" href="{% url 'article-list' %}?category={{ article.category.parent_category.id }}">
+          <u>{{ article.category.parent_category }}</u></a></span> >
+      {% endif %}
+      <span><a class="text-muted" href="{% url 'article-list' %}?category={{ article.category.id }}">
+        <u>{{ article.category }}</u></a></span> >
+      <span>{{ article.title }}</span>
     </div>
-    <hr/>
+    <div class="d-flex justify-content-between">
+      <div>
+        <span>标签&ensp;</span>
+        {% for tag in article.tag.all %}
+          <a class="p-1 text-muted" href="{% url 'article-list' %}?tag={{ tag.id }}"><u>{{ tag }}</u></a>
+        {% endfor %}
+      </div>
+      <div>
+        <span>{{ article.pub_time }} by <a class="text-muted" href="{% url 'article-list' %}">
+          <u>{{ article.author }}</u></a></span>
+      </div>
+    </div>
+    <hr>
     <p>
-        {% autoescape off %}
-        {{ post.content_html }}
-        {% endautoescape %}
+      {% autoescape off %}
+        {{ article.content_html }}
+      {% endautoescape %}
     </p>
-    {% endif %}
+    <div class="py-4 px-2 my-4 d-flex justify-content-between border-top border-bottom">
+      <div>
+        {% if article.next_article %}
+          <a class="text-muted" href="{% url 'article-detail' article.next_article.id %}">
+            <u><< {{ article.next_article.title }}</u></a>
+        {% else %}
+          已经是最新一篇
+        {% endif %}
+      </div>
+      <div>
+        {% if article.prev_article %}
+          <a class="text-muted" href="{% url 'article-detail' article.prev_article.id %}">
+            <u>{{ article.prev_article.title }} >></u></a>
+        {% else %}
+          已经是最早一篇
+        {% endif %}
+      </div>
+    </div>
 
-    {% comment_block request.path %}
+    <!-- 评论输入框 -->
+    <form method="POST" action="{% url 'add-comment' article.id %}" id="commentForm">
+      {% csrf_token %}
+      <div class="card mb-3">
+        {% if blog_setting.open_site_comment and article.comment_allowed and request.user.is_authenticated %}
+          <div class="card-header d-flex">
+            <strong>发表评论</strong>
+            <div class="ml-3 text-black-50" id="commentObject">
+              <small>
+                回复：
+                <strong><span id="replyCommentAuthor"></span></strong>&nbsp;
+                <span id="replyCommentContent"></span>
+              </small>&nbsp;
+              <a href="javascript:void(0);" id="cancelReply"><small class="text-muted"><u>取消回复</u></small></a>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              {{ comment_form.as_table }}
+            </div>
+          </div>
+          <div class="card-footer text-muted text-right">
+            <button class="btn btn-sm btn-info" type="submit">发表评论</button>
+          </div>
+        {% elif not request.user.is_authenticated %}
+          <div class="card-header d-flex">
+            <strong>发表评论</strong>
+          </div>
+          <div class="card-body">
+            您还没有登录，请登录后发表评论。
+          </div>
+          <div class="card-footer text-muted text-right">
+            <a href="{% url 'account_login' %}?next=/article/{{ article.id }}/" type="button" class="btn btn-sm btn-info">用户登录</a>
+          </div>
+        {% else %}
+          <div class="card-header d-flex">
+            <strong>发表评论</strong>
+          </div>
+          <div class="card-body">
+            当前禁止评论。
+          </div>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- 评论数目 -->
+    <div class="mt-4">
+      <h5><strong>{{ article.comment_num }}</strong>&nbsp;评论</h5>
+    </div>
+
+    <!-- 目录列表 -->
+    <ul class="list-group">
+      {% comment_block comment_tree %}
+    </ul>
+
+  {% endif %}
+
+{% endblock %}
+
+{% block custom_js %}
+  <script>
+
+    $(document).ready(function(){
+      $('#commentObject').hide();
+    });
+
+    // 处理点击回复按钮的事件
+    function reply_comment(comment_id, comment_author, comment_content) {
+      // 为评论表单的parent_comment字段添加value
+      $('#id_parent_comment').val(comment_id);
+      // 将回复对象和内容展示在评论表单头部
+      $('#replyCommentAuthor').text(comment_author);
+      $('#replyCommentContent').text(comment_content);
+      $('#commentObject').show();
+    }
+
+    // 取消回复
+    $('#cancelReply').on("click", function () {
+      // 将评论表单的parent_comment字段重置为空
+      $('#id_parent_comment').val(null);
+      // 取消回复对象和内容展示在评论表单头部
+      $('#commentObject').hide();
+    })
+
+  </script>
 {% endblock %}

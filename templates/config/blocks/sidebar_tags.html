@@ -1,6 +1,11 @@
-<ul>
+<div class="row no-gutters">
 {% for tag in tags %}
-  <li><a href="{% url 'article-list' %}?tag={{ tag.id }}">{{ tag.name }}</a>
-    {{ tag.article_count }}</li>
+  <div class="mb-2">
+    <a href="{% url 'article-list' %}?tag={{ tag.id }}">
+      <button type="button" class="btn btn-outline-secondary btn-sm">
+        {{ tag.name }}&nbsp;<span class="badge badge-info">{{ tag.article_count }}</span>
+      </button>
+    </a>
+  </div>&nbsp;
 {% endfor %}
-</ul>
+</div>

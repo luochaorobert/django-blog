@@ -1,0 +1,72 @@
+{% extends "account/base.html" %}
+
+{% block head_title %}用户信息{% endblock %}
+
+{% block content %}
+
+{% if is_self %}
+  <div class="form-signin row align-items-center justify-content-center">
+    <img src="{{ user.image.url }}" class="card-img rounded-circle head-image-lg" alt="User Image">
+    <h1>&nbsp;个人信息</h1>
+  </div>
+
+  <form class="form-signin" method="post" action="{% url 'profile' user.id %}" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <fieldset disabled>
+      <div class="form-group">
+        <label for="userName" class="mb-1">用户名</label>
+        <input type="text" class="form-control" id="userName" value="{{ user.username }}">
+      </div>
+      <div class="form-group">
+        <label for="userEmail" class="mb-1">邮箱</label>
+        <input type="text" class="form-control" id="userEmail" value="{{ user.email }}">
+      </div>
+    </fieldset>
+
+    {% include 'account/snippets/bs4_form.html' with form=form %}
+
+    {% if form.is_bound and not form.errors %}
+      <button class="btn btn-success btn-block mt-4" type="button">修改成功</button>
+    {% endif %}
+
+    <button class="btn btn-info btn-block mt-4" type="submit">提交修改</button>
+  </form>
+
+  <div class="px-3 d-flex justify-content-between">
+    <div>
+      <a href="{% url 'account_change_password' %}"><u>修改密码</u></a>
+    </div>
+    <div>
+      <a href="{% url 'account_logout' %}"><u>注销登录</u></a>
+    </div>
+  </div>
+
+{% else %}
+
+  <div class="card border-info">
+    <div class="card-header border-info">
+      <div class="form-signin row align-items-center p-0">
+        <img src="{{ user.image.url }}" class="card-img rounded-circle head-image-lg" alt="User Image">
+        <h1>&nbsp;用户信息</h1>
+      </div>
+    </div>
+    <div class="card-body form-signin">
+      <dl class="row mt-1">
+        <dt class="col-sm-4 mb-4">用户名</dt>
+        <dd class="col-sm-8">{{ user.username }}</dd>
+        <dt class="col-sm-4 mb-4">邮箱</dt>
+        <dd class="col-sm-8">{{ user.email }}</dd>
+        <dt class="col-sm-4 mb-4">昵称</dt>
+        <dd class="col-sm-8">{{ user.nickname|default_if_none:"未填写" }}</dd>
+        <dt class="col-sm-4 mb-4">手机号码</dt>
+        <dd class="col-sm-8">{{ user.mobile|default_if_none:"未填写" }}</dd>
+        <dt class="col-sm-4">个人主页</dt>
+        <dd class="col-sm-8">{{ user.homepage|default_if_none:"未填写" }}</dd>
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+{% endif %}
+{% endblock %}
