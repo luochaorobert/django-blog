@@ -102,7 +102,7 @@ class Tag(models.Model):
 
     @cached_property
     def article_count(self):
-        return Article.objects.filter(tag__name=self.name).distinct().count()
+        return Article.objects.filter(tag__name=self.name, is_published=True).distinct().count()
 
     article_count.short_description = "文章数量"
 
@@ -158,12 +158,12 @@ class Article(models.Model):
     def next_article(self):
         # 下一篇文章
         return Article.objects.filter(
-            pub_time__gt=self.pub_time).order_by('pub_time').first()
+            pub_time__gt=self.pub_time, is_published=True).order_by('pub_time').first()
 
     def prev_article(self):
         # 前一篇文章
         return Article.objects.filter(
-            pub_time__lt=self.pub_time).order_by('pub_time').last()
+            pub_time__lt=self.pub_time, is_published=True).order_by('pub_time').last()
 
     @classmethod
     def latest_articles(cls, nums=None):

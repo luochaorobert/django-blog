@@ -19,11 +19,11 @@ class ArticleFilter(django_filters.FilterSet):
         fields = {}
 
     def key_custom_filter(self, queryset, name, value):
-        return Article.objects.filter(
+        return Article.objects.filter(is_published=True).filter(
             Q(title__icontains=value) | Q(desc__icontains=value) | Q(content__icontains=value)
         )
 
     def category_custom_filter(self, queryset, name, value):
-        return Article.objects.filter(
+        return Article.objects.filter(is_published=True).filter(
             Q(category_id__exact=value) | Q(category__parent_category_id__exact=value)
         )
