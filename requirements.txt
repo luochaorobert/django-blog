@@ -3,7 +3,7 @@ mysqlclient==1.4.6
 django-environ==0.4.5
 Pillow==7.1.2
 django-mdeditor==0.1.18
-mistune==0.8.4
+mistune==2.0.3
 django-filter==2.3.0
 django-allauth==0.42.0
 django-widget-tweaks==1.4.8
